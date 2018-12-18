@@ -75,7 +75,7 @@ class Sniffer:
             When I use this word first,I only can get one protocol just like `TCP`, `UDP`, or `ICMP`...
             So, should I neet to use Multiprocessing Pool ??
             I have been thinking for a long time about multi-process parallelism ...
-            But, When I say the anotation about `AF_PACKET` I get a clear idea. Why not unpack the MAC-Packet?
+            But, When I saw the anotation about `AF_PACKET` I get a clear idea. Why not unpack the MAC-Packet?
             Ohhhh!
             
             You can see the word about AF_PACKET =>  `When using socket.AF_PACKET to create a socket,
