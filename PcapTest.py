@@ -8,10 +8,11 @@ __AUTHOR__ = 'JoyChan'
 # ---* CONFIG *---
 TIMEOUT = 10  # FOR DEFAULT TIMEOUT & NOT CAUSE A DEADLOCK
 HAVE_SAVED = True  # control file save
-HAVE_FILTER_PROTOCOL = True  # control filter rules for protocol
-HAVE_FILTER_IP = True  # control filter rules for ip
+HAVE_FILTER_PROTOCOL = False  # control filter rules for protocol
+HAVE_FILTER_IP = False  # control filter rules for ip
 HAVE_SEARCH = False  # control search func
 # ---* CONFIG *---
+
 protocol_filter_list = []
 source_ip_filter_list = []
 destination_ip_filter_list = []
@@ -19,8 +20,15 @@ destination_ip_filter_list = []
 
 class Sniffer:
     def __init__(self):
-        self.param = None
+        global protocol_filter_list
+        global source_ip_filter_list
+        global destination_ip_filter_list
+
         self.s = None
+        self.filter_proto = protocol_filter_list
+        self.filter_in_ip = source_ip_filter_list
+        self.filter_out_ip = destination_ip_filter_list
+
         self.Packet_MAC = {
             'Source MAC': None,
             'Destination MAC': None
@@ -56,11 +64,13 @@ class Sniffer:
             'Data_seg': None
         }
 
-    def eth_addr(self, a):
+    @staticmethod
+    def eth_addr(a):
         b = "%.2x-%.2x-%.2x-%.2x-%.2x-%.2x" % (a[0], a[1], a[2], a[3], a[4], a[5])
         return b
 
-    def change_digit_to_word(self, protocol):
+    @staticmethod
+    def change_digit_to_word(protocol):
         protocols = {
             '0': 'IP',
             '1': 'ICMP',
@@ -74,9 +84,9 @@ class Sniffer:
             # self.s = socket.socket(socket.AF_INET, socket.SOCK_RAW, self.param)
             self.s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
         except:
-            print(str(self.param), '# Socket could not be created')
+            print('Socket could not be created')
             exit(-1)
-        print(str(self.param), '# Socket established success!')
+        print('Socket established success!')
         self.unpack_eth_packet()
 
     def unpack_eth_packet(self):
@@ -221,13 +231,14 @@ class Sniffer:
 if __name__ == '__main__':
     # pool = Pool()
 
-    if HAVE_FILTER:
-        str_filter = input('Please input filter protocol\n')
+    if HAVE_FILTER_PROTOCOL:
+        str_filter = input('Please input protocol filter\n')
         protocol_filter_list = str_filter.split(' ')
+        print(protocol_filter_list)
     if HAVE_FILTER_IP:
-        str_filter_in_ip = input('Please input filter in-ip_addr\n')
+        str_filter_in_ip = input('Please input in-ip filter\n')
         source_ip_filter_list = str_filter_in_ip
-        str_filter_out_ip = input('Please input filter in-ip_addr\n')
+        str_filter_out_ip = input('Please input out-ip filter\n')
         destination_ip_filter_list = str_filter_out_ip
     snif = Sniffer()
     try:
