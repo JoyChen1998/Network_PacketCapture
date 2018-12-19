@@ -1,21 +1,26 @@
 # encoding = utf-8
-
 import socket
+import time
 from struct import *
 
 __AUTHOR__ = 'JoyChan'
+__REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 
 # ---* CONFIG *---
+
 TIMEOUT = 10  # FOR DEFAULT TIMEOUT & NOT CAUSE A DEADLOCK
-HAVE_SAVED = True  # control file save
+HAVE_SAVED = False  # control file save
 HAVE_FILTER_PROTOCOL = False  # control filter rules for protocol
 HAVE_FILTER_IP = False  # control filter rules for ip
 HAVE_SEARCH = False  # control search func
+
 # ---* CONFIG *---
+
 
 protocol_filter_list = []
 source_ip_filter_list = []
 destination_ip_filter_list = []
+allows_protocol = ['TCP', 'ICMP', 'UDP']
 
 
 class Sniffer:
@@ -82,7 +87,7 @@ class Sniffer:
     def soc_establish_conn(self):
         try:
             # self.s = socket.socket(socket.AF_INET, socket.SOCK_RAW, self.param)
-            self.s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))
+            self.s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))  # set a packet socket conn
         except:
             print('Socket could not be created')
             exit(-1)
@@ -90,7 +95,8 @@ class Sniffer:
         self.unpack_eth_packet()
 
     def unpack_eth_packet(self):
-        for i in range(1, 20):
+        # for i in range(1, 20):
+        while True:
             packet = self.s.recvfrom(65565)
             packet = packet[0]
             # parse ethernet header
@@ -106,6 +112,8 @@ class Sniffer:
                 print(key, ':', value, end=' | ')
                 if eth_protocol == 8:
                     self.unpack_ip_packet(packet, eth_length)
+            #         add a interval
+            time.sleep(2)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
@@ -129,14 +137,15 @@ class Sniffer:
             print(key, ':', value, end=' | ')
         print()
         new_length = iph_lenth + eth_len  # upgrade packet parser start length
-        if protocol == 6:
+
+        if protocol == 6 and protocol not in protocol_filter_list:
             self.unpack_tcp_packet(new_length, packet)
-        elif protocol == 17:
+        elif protocol == 17 and protocol not in protocol_filter_list:
             self.unpack_udp_packet(new_length, packet)
-        elif protocol == 1:
+        elif protocol == 1 and protocol not in protocol_filter_list:
             self.unpack_icmp_packet(new_length, packet)
         else:
-            print('This Packe\'s Protocol is not in [ TCP , ICMP , UDP ] ')
+            print('This Packe\'s Protocol is not in [ TCP , ICMP , UDP ] or in the filter list')
             print()
 
     def unpack_tcp_packet(self, iph_lenth, packet):
@@ -161,6 +170,9 @@ class Sniffer:
         if HAVE_SAVED:
             with open('TCP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
+                    f.write(key + ':' + str(value) + '\t')
+                f.write('\n')
+                for key, value in self.Packet_IP.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n')
                 for key, value in self.Packet_TCP.items():
@@ -192,6 +204,9 @@ class Sniffer:
                 for key, value in self.Packet_MAC.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n')
+                for key, value in self.Packet_IP.items():
+                    f.write(key + ':' + str(value) + '\t')
+                f.write('\n')
                 for key, value in self.Packet_UDP.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
@@ -219,6 +234,9 @@ class Sniffer:
                 for key, value in self.Packet_MAC.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n')
+                for key, value in self.Packet_IP.items():
+                    f.write(key + ':' + str(value) + '\t')
+                f.write('\n')
                 for key, value in self.Packet_ICMP.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
@@ -233,8 +251,20 @@ if __name__ == '__main__':
 
     if HAVE_FILTER_PROTOCOL:
         str_filter = input('Please input protocol filter\n')
-        protocol_filter_list = str_filter.split(' ')
+        protocol_filter_list = str_filter.strip().split(' ')
         print(protocol_filter_list)
+        for i in range(0, len(protocol_filter_list)):
+            if protocol_filter_list[i] in allows_protocol:
+                if protocol_filter_list[i] == 'TCP':
+                    protocol_filter_list[i] = 6
+                elif protocol_filter_list[i] == 'ICMP':
+                    protocol_filter_list[i] = 1
+                elif protocol_filter_list[i] == 'UDP':
+                    protocol_filter_list[i] = 17
+                else:
+                    print('Maybe your input has something wrong...')
+                    protocol_filter_list = []
+        # print(protocol_filter_list)
     if HAVE_FILTER_IP:
         str_filter_in_ip = input('Please input in-ip filter\n')
         source_ip_filter_list = str_filter_in_ip
@@ -245,5 +275,5 @@ if __name__ == '__main__':
         # pool.map(snif.soc_establish_conn, params)   # udp will cause suspended
         snif.soc_establish_conn()
     except:
-        print('*'*30)
+        print('*' * 30)
         print('HALTED!')
