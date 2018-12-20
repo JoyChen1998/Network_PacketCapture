@@ -6,12 +6,13 @@ from struct import *
 __AUTHOR__ = 'JoyChan'
 __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 
+
 # ---* CONFIG *---
 
 TIMEOUT = 10  # FOR DEFAULT TIMEOUT & NOT CAUSE A DEADLOCK
-HAVE_SAVED = False  # control file save
-HAVE_FILTER_PROTOCOL = False  # control filter rules for protocol
-HAVE_FILTER_IP = False  # control filter rules for ip
+HAVE_SAVED = True  # control file save
+HAVE_FILTER_PROTOCOL = True  # control filter rules for protocol
+HAVE_FILTER_IP = True  # control filter rules for ip
 HAVE_SEARCH = False  # control search func
 
 # ---* CONFIG *---
@@ -75,6 +76,13 @@ class Sniffer:
         return b
 
     @staticmethod
+    def convert_hex_to_ascii(data):
+        tmp = ''
+        for j in range(0, len(data)):
+            tmp += chr(int("%.2x" % data[j], 16))
+        return tmp
+
+    @staticmethod
     def change_digit_to_word(protocol):
         protocols = {
             '0': 'IP',
@@ -108,12 +116,10 @@ class Sniffer:
             dest_eth_addr = self.eth_addr(packet[0:6])
             self.Packet_MAC['Source MAC'] = source_eth_addr
             self.Packet_MAC['Destination MAC'] = dest_eth_addr
-            for key, value in self.Packet_MAC.items():
-                print(key, ':', value, end=' | ')
-                if eth_protocol == 8:
-                    self.unpack_ip_packet(packet, eth_length)
-            #         add a interval
-            time.sleep(2)
+            if eth_protocol == 8:
+                self.unpack_ip_packet(packet, eth_length)
+    #         add a interval
+    #         time.sleep(2)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
@@ -133,20 +139,32 @@ class Sniffer:
         self.Packet_IP['Protocol'] = self.change_digit_to_word(protocol)
         self.Packet_IP['Source Address'] = socket.inet_ntoa(iph[8])
         self.Packet_IP['Destination Address'] = socket.inet_ntoa(iph[9])
-        for key, value in self.Packet_IP.items():
-            print(key, ':', value, end=' | ')
-        print()
+        # filter for ip in/out
+        if len(self.filter_in_ip) > 0 and self.Packet_IP['Source Address'] not in self.filter_in_ip:
+            return
+        if len(self.filter_out_ip) > 0 and self.Packet_IP['Destination Address'] not in self.filter_out_ip:
+            return
         new_length = iph_lenth + eth_len  # upgrade packet parser start length
-
-        if protocol == 6 and protocol not in protocol_filter_list:
-            self.unpack_tcp_packet(new_length, packet)
-        elif protocol == 17 and protocol not in protocol_filter_list:
-            self.unpack_udp_packet(new_length, packet)
-        elif protocol == 1 and protocol not in protocol_filter_list:
-            self.unpack_icmp_packet(new_length, packet)
+        # classify different kinds of packet
+        if HAVE_FILTER_PROTOCOL:
+            if protocol == 6 and protocol in protocol_filter_list:
+                self.unpack_tcp_packet(new_length, packet)
+            elif protocol == 17 and protocol in protocol_filter_list:
+                self.unpack_udp_packet(new_length, packet)
+            elif protocol == 1 and protocol in protocol_filter_list:
+                self.unpack_icmp_packet(new_length, packet)
+            else:
+                return
         else:
-            print('This Packe\'s Protocol is not in [ TCP , ICMP , UDP ] or in the filter list')
-            print()
+            if protocol == 6:
+                self.unpack_tcp_packet(new_length, packet)
+            elif protocol == 17:
+                self.unpack_udp_packet(new_length, packet)
+            elif protocol == 1:
+                self.unpack_icmp_packet(new_length, packet)
+            else:
+                print('This Packe\'s Protocol is not in [ TCP , ICMP , UDP ]')
+                print()
 
     def unpack_tcp_packet(self, iph_lenth, packet):
         tcp_header = packet[iph_lenth:iph_lenth + 20]
@@ -166,7 +184,7 @@ class Sniffer:
         self.Packet_TCP['Sequence'] = sequence
         self.Packet_TCP['Acknowledgement'] = acknowledgement
         self.Packet_TCP['TCP Header Length'] = tcph_length
-        self.Packet_TCP['Data_seg'] = data
+        self.Packet_TCP['Data_seg'] = self.convert_hex_to_ascii(data)
         if HAVE_SAVED:
             with open('TCP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
@@ -178,6 +196,12 @@ class Sniffer:
                 for key, value in self.Packet_TCP.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
+        for key, value in self.Packet_MAC.items():
+            print(key, ':', value, end=' | ')
+        print()
+        for key, value in self.Packet_IP.items():
+            print(key, ':', value, end=' | ')
+        print()
         for key, value in self.Packet_TCP.items():
             print(key, ':', value, end=' | ')
         print()
@@ -198,7 +222,7 @@ class Sniffer:
         self.Packet_UDP['Dest_port'] = dest_port
         self.Packet_UDP['Length'] = length
         self.Packet_UDP['Checksum'] = checksum
-        self.Packet_UDP['Data_seg'] = data
+        self.Packet_UDP['Data_seg'] = self.convert_hex_to_ascii(data)
         if HAVE_SAVED:
             with open('UDP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
@@ -210,6 +234,12 @@ class Sniffer:
                 for key, value in self.Packet_UDP.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
+        for key, value in self.Packet_MAC.items():
+            print(key, ':', value, end=' | ')
+        print()
+        for key, value in self.Packet_IP.items():
+            print(key, ':', value, end=' | ')
+        print()
         for key, value in self.Packet_UDP.items():
             print(key, ':', value, end=' | ')
         print()
@@ -228,7 +258,7 @@ class Sniffer:
         self.Packet_ICMP['Type'] = icmp_type
         self.Packet_ICMP['Code'] = code
         self.Packet_ICMP['Checksum'] = checksum
-        self.Packet_ICMP['Data_seg'] = data
+        self.Packet_ICMP['Data_seg'] = self.convert_hex_to_ascii(data)
         if HAVE_SAVED:
             with open('ICMP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
@@ -240,6 +270,12 @@ class Sniffer:
                 for key, value in self.Packet_ICMP.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
+        for key, value in self.Packet_MAC.items():
+            print(key, ':', value, end=' | ')
+        print()
+        for key, value in self.Packet_IP.items():
+            print(key, ':', value, end=' | ')
+        print()
         for key, value in self.Packet_ICMP.items():
             print(key, ':', value, end=' | ')
         print()
@@ -275,5 +311,5 @@ if __name__ == '__main__':
         # pool.map(snif.soc_establish_conn, params)   # udp will cause suspended
         snif.soc_establish_conn()
     except:
-        print('*' * 30)
+        print('*'*30)
         print('HALTED!')
