@@ -9,7 +9,7 @@ __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 
 # ---* CONFIG *---
 
-TIME_INTERVAL = 2  # for default speed to get a packet
+TIMEOUT = 2  # for default speed to get a packet
 HAVE_SAVED = True  # control file save
 HAVE_FILTER_PROTOCOL = True  # control filter rules for protocol
 HAVE_FILTER_IP = True  # control filter rules for ip
@@ -79,10 +79,7 @@ class Sniffer:
 
     @staticmethod
     def convert_hex_to_ascii(data):
-        tmp = ''
-        for j in range(0, len(data)):
-            tmp += chr(int("%.2x" % data[j], 16))
-        return tmp
+        return data.decode().encode("utf-8").decode("utf-8")
 
     @staticmethod
     def change_digit_to_word(protocol):
@@ -121,7 +118,7 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-    #         time.sleep(TIME_INTERVAL)
+    #         time.sleep(2)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
