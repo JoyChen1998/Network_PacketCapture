@@ -9,7 +9,7 @@ __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 
 # ---* CONFIG *---
 
-TIMEOUT = 10  # FOR DEFAULT TIMEOUT & NOT CAUSE A DEADLOCK
+TIMEOUT = 2  # for default speed to get a packet
 HAVE_SAVED = True  # control file save
 HAVE_FILTER_PROTOCOL = True  # control filter rules for protocol
 HAVE_FILTER_IP = True  # control filter rules for ip
@@ -46,14 +46,14 @@ class Sniffer:
             'Protocol': None,
             'Source Address': None,
             'Destination Address': None
-
         }
         self.Packet_UDP = {
             'Source_port': None,
             'Dest_port': None,
             'Length': None,
             'Checksum': None,
-            'Data_seg': None
+            'Data_seg': None,
+            'Data_length': None
         }
         self.Packet_TCP = {
             'Source_port': None,
@@ -61,13 +61,15 @@ class Sniffer:
             'Sequence': None,
             'Acknowledgement': None,
             'TCP Header Length': None,
-            'Data_seg': None
+            'Data_seg': None,
+            'Data_length': None
         }
         self.Packet_ICMP = {
             'Type': None,
             'Code': None,
             'Checksum': None,
-            'Data_seg': None
+            'Data_seg': None,
+            'Data_length': None
         }
 
     @staticmethod
@@ -178,13 +180,14 @@ class Sniffer:
         h_size = iph_lenth + tcph_length * 4
         data_size = len(packet) - h_size
         # TCP Packet's data segment
-        data = packet[data_size:]
+        data = packet[h_size:]
         self.Packet_TCP['Source_port'] = source_port
         self.Packet_TCP['Dest_port'] = dest_port
         self.Packet_TCP['Sequence'] = sequence
         self.Packet_TCP['Acknowledgement'] = acknowledgement
         self.Packet_TCP['TCP Header Length'] = tcph_length
         self.Packet_TCP['Data_seg'] = self.convert_hex_to_ascii(data)
+        self.Packet_TCP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('TCP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
@@ -197,14 +200,15 @@ class Sniffer:
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
         for key, value in self.Packet_TCP.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
+        print('*' * 35)
         print()
 
     def unpack_udp_packet(self, iph_lenth, packet):
@@ -217,12 +221,13 @@ class Sniffer:
         checksum = udph[3]
         h_size = iph_lenth + udph_length
         data_size = len(packet) - h_size
-        data = packet[data_size:]
+        data = packet[h_size:]
         self.Packet_UDP['Source_port'] = source_port
         self.Packet_UDP['Dest_port'] = dest_port
         self.Packet_UDP['Length'] = length
         self.Packet_UDP['Checksum'] = checksum
         self.Packet_UDP['Data_seg'] = self.convert_hex_to_ascii(data)
+        self.Packet_UDP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('UDP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
@@ -235,14 +240,15 @@ class Sniffer:
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
         for key, value in self.Packet_UDP.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
+        print('*' * 35)
         print()
 
     def unpack_icmp_packet(self, iph_lenth, packet):
@@ -254,11 +260,12 @@ class Sniffer:
         checksum = icmph[2]
         h_size = iph_lenth + icmph_length
         data_size = len(packet) - h_size
-        data = packet[data_size:]
+        data = packet[h_size:]
         self.Packet_ICMP['Type'] = icmp_type
         self.Packet_ICMP['Code'] = code
         self.Packet_ICMP['Checksum'] = checksum
         self.Packet_ICMP['Data_seg'] = self.convert_hex_to_ascii(data)
+        self.Packet_ICMP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('ICMP_PACKET.txt', 'a') as f:
                 for key, value in self.Packet_MAC.items():
@@ -271,14 +278,15 @@ class Sniffer:
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
         for key, value in self.Packet_ICMP.items():
-            print(key, ':', value, end=' | ')
+            print(key, ':', value, end='   ')
         print()
+        print('*' * 35)
         print()
 
 
@@ -311,5 +319,5 @@ if __name__ == '__main__':
         # pool.map(snif.soc_establish_conn, params)   # udp will cause suspended
         snif.soc_establish_conn()
     except:
-        print('*'*30)
+        print('*'*35)
         print('HALTED!')
