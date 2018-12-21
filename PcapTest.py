@@ -1,6 +1,7 @@
 # encoding = utf-8
 import socket
 import time
+import collections
 from struct import *
 from multiprocessing import Pool
 
@@ -11,7 +12,7 @@ __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 # ---* CONFIG *---
 
 TIMEOUT = 1  # for default speed to get a packet
-HAVE_SAVED = False  # control file save
+HAVE_SAVED = True  # control file save
 HAVE_FILTER_PROTOCOL = False  # control filter rules for protocol
 HAVE_FILTER_IP = False  # control filter rules for ip
 HAVE_SEARCH = False  # control search func
@@ -22,8 +23,6 @@ HAVE_SEARCH = False  # control search func
 protocol_filter_list = []
 source_ip_filter_list = []
 destination_ip_filter_list = []
-
-cnt = 0  # for packet merge
 
 allows_protocol = ['TCP', 'ICMP', 'UDP']  # for transfer protocol number to protocol name
 
@@ -41,6 +40,7 @@ class Sniffer:
         self.filter_proto = protocol_filter_list
         self.filter_in_ip = source_ip_filter_list
         self.filter_out_ip = destination_ip_filter_list
+        self.cnt = 1  # for count packet
 
         self.Packet_MAC = {
             'Source MAC': None,
@@ -119,10 +119,9 @@ class Sniffer:
         When I use this word first,I only can get one protocol just like `TCP`, `UDP`, or `ICMP`...
         So, should I neet to use Multiprocessing Pool ??
         I have been thinking for a long time about multi-process parallelism ...
-        But, When I say the anotation about `AF_PACKET` I get a clear idea. Why not unpack the MAC-Packet?
-        Ohhhh!
+        But, When I saw the anotation about `AF_PACKET` I got a clear idea. Why not unpack the MAC-Packet?
 
-        You can see the word about AF_PACKET =>  `When using socket.AF_PACKET to create a socket, 
+        Well, You can see the word about AF_PACKET =>  `When using socket.AF_PACKET to create a socket, 
         it will be able to capture all Ethernet frames received or sent by the unit.`
 
         So, the final version change to use AF_PACKET, I don't need to care about multi-process!
@@ -154,7 +153,7 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-            time.sleep(TIMEOUT)
+    #         time.sleep(TIMEOUT)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
@@ -222,8 +221,10 @@ class Sniffer:
         self.Packet_TCP['TCP Header Length'] = tcph_length
         self.Packet_TCP['Data_seg'] = self.convert_hex_to_ascii(data)
         self.Packet_TCP['Data_length'] = data_size
+        self.cnt += 1
         if HAVE_SAVED:
             with open('TCP_PACKET.txt', 'a') as f:
+                f.write('** packet - index: ' + str(self.cnt) + ' **\n')
                 for key, value in self.Packet_MAC.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n')
@@ -232,7 +233,8 @@ class Sniffer:
                 f.write('\n')
                 for key, value in self.Packet_TCP.items():
                     f.write(key + ':' + str(value) + '\t')
-                f.write('\n\n')
+                f.write('\n***************************\n\n')
+        print('** packet - index: ', str(self.cnt), ' **')
         for key, value in self.Packet_MAC.items():
             print(key, ':', value, end='\t')
         print()
@@ -262,8 +264,10 @@ class Sniffer:
         self.Packet_UDP['Checksum'] = checksum
         self.Packet_UDP['Data_seg'] = self.convert_hex_to_ascii(data)
         self.Packet_UDP['Data_length'] = data_size
+        self.cnt += 1
         if HAVE_SAVED:
             with open('UDP_PACKET.txt', 'a') as f:
+                f.write('** packet - index: ' + str(self.cnt) + ' **\n')
                 for key, value in self.Packet_MAC.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n')
@@ -272,7 +276,8 @@ class Sniffer:
                 f.write('\n')
                 for key, value in self.Packet_UDP.items():
                     f.write(key + ':' + str(value) + '\t')
-                f.write('\n\n')
+                f.write('\n***************************\n\n')
+        print('** packet - index: ', str(self.cnt), ' **')
         for key, value in self.Packet_MAC.items():
             print(key, ':', value, end='\t')
         print()
@@ -300,8 +305,10 @@ class Sniffer:
         self.Packet_ICMP['Checksum'] = checksum
         self.Packet_ICMP['Data_seg'] = self.convert_hex_to_ascii(data)
         self.Packet_ICMP['Data_length'] = data_size
+        self.cnt += 1
         if HAVE_SAVED:
             with open('ICMP_PACKET.txt', 'a') as f:
+                f.write(' **packet - index: ' + str(self.cnt) + ' **\n')
                 for key, value in self.Packet_MAC.items():
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n')
@@ -310,7 +317,8 @@ class Sniffer:
                 f.write('\n')
                 for key, value in self.Packet_ICMP.items():
                     f.write(key + ':' + str(value) + '\t')
-                f.write('\n\n')
+                f.write('\n***************************\n\n')
+        print('** packet - index: ', str(self.cnt), ' **')
         for key, value in self.Packet_MAC.items():
             print(key, ':', value, end='\t')
         print()
