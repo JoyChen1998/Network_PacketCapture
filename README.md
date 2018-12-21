@@ -2,25 +2,27 @@
 My computer-network project about packet capture. 
 
 ## 运行环境
-+ Python 3.5 (or latest)    
-    [ need module basically => `socket` ,  `struct` ]
-+ OS Platform
-    Linux
-    + note:  
-        1. macOS 无法使用`socket`的关键字`socket.AF_PACKET` ，因此使用CentOS。Windows 我没有测试过，欢迎你的测试
-        2. 需要在root下运行
++ Python 3.5 (or latest)        [ need module basically => `socket` ,  `struct` ]
++ OS Platform   =>   Linux
++ Note:  
+    1. macOS 无法使用`socket`的关键字`socket.AF_PACKET` ，因此使用CentOS。Windows 我没有测试过，欢迎你的测试
+    2. 需要在root下运行
 
 ## 功能配置说明
 + `INTERVAL`  [`int`]
+
     该变量控制每次获取MAC帧的速度，默认被注释，在方法`unpack_eth_packet`中
     
 + `HAVE_SAVED`  [`boolean`]
+
     该变量控制是否写入文件保存解得的数据包部分，默认为`False`(不保存)，在每一个解包方法中都有控制
     
 + `HAVE_FILTER_PROTOCOL`  [`boolean`]
+
     该变量控制是否过滤某种协议，默认为`False`(不过滤)，在`unpack_ip_packet`中使用。开启过滤时，需要输入协议(upper case)，然后就只会解指定协议的数据包，不会尝试解别的协议的数据包。
     
 + `HAVE_FILTER_IP`  [`boolean`]
+
     该变量控制是否需要过滤`来源IP`和`目的IP`，默认为`False`(不过滤)，在`unpack_ip_packet`中使用。开启过滤时，需要输入指定的`来源IP`和`目的IP`。然后就只会解指定IP的数据包，不会尝试解含有别的IP的数据包。
     
 + `HAVE_SEARCH`  [`boolean`]
@@ -39,7 +41,7 @@ My computer-network project about packet capture.
 
 + 开始解析传输层和ICMP协议数据包部分，同样首先分析该IP数据包的头部。
     + 此时，可以以相同的手法获取相应的`TCP`、`UDP`、`ICMP`首部对应的信息，对应的，剩下的数据部分就是数据段部分。
-    + 同时，需要注意的是：*数据段部分需要进行一次`utf-8`编码的转换，否则会出现文字段部分乱码的现象.* 然后将其传入对应协议的字典保存。
+    + 同时，需要注意的是：数据段部分需要进行一次`utf-8`编码的转换，否则会出现文字段部分乱码的现象. 然后将其传入对应协议的字典保存。
 
 + 若开启文件保存，就在每个方法末尾加上文件写入，将获取的所有数据包信息保存到文件以便后面查看。
 
