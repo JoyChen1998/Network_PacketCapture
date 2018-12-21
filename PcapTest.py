@@ -10,10 +10,10 @@ __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 
 # ---* CONFIG *---
 
-TIMEOUT = 2  # for default speed to get a packet
-HAVE_SAVED = True  # control file save
-HAVE_FILTER_PROTOCOL = True  # control filter rules for protocol
-HAVE_FILTER_IP = True  # control filter rules for ip
+TIMEOUT = 1  # for default speed to get a packet
+HAVE_SAVED = False  # control file save
+HAVE_FILTER_PROTOCOL = False  # control filter rules for protocol
+HAVE_FILTER_IP = False  # control filter rules for ip
 HAVE_SEARCH = False  # control search func
 
 # ---* CONFIG *---
@@ -84,7 +84,15 @@ class Sniffer:
 
     @staticmethod
     def convert_hex_to_ascii(data):
-        return data.decode().encode("utf-8").decode("utf-8")
+        tmp = ""
+        try:
+            tmp = data.decode().encode("utf-8").decode("utf-8")
+        except:
+            for j in range(0, len(data)):
+                tmp += chr(int("%.2x" % data[j], 16))
+        return tmp
+
+
 
     @staticmethod
     def change_digit_to_word(protocol):
@@ -144,7 +152,7 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-    #         time.sleep(TIMEOUT)
+            time.sleep(TIMEOUT)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
@@ -192,6 +200,7 @@ class Sniffer:
                 print()
 
     def unpack_tcp_packet(self, iph_lenth, packet):
+
         tcp_header = packet[iph_lenth:iph_lenth + 20]
         tcph = unpack('!HHLLBBHHH', tcp_header)
         source_port = tcph[0]
@@ -223,13 +232,13 @@ class Sniffer:
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         for key, value in self.Packet_TCP.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         print('*' * 35)
         print()
@@ -263,13 +272,13 @@ class Sniffer:
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         for key, value in self.Packet_UDP.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         print('*' * 35)
         print()
@@ -301,13 +310,13 @@ class Sniffer:
                     f.write(key + ':' + str(value) + '\t')
                 f.write('\n\n')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         for key, value in self.Packet_ICMP.items():
-            print(key, ':', value, end='   ')
+            print(key, ':', value, end='\t')
         print()
         print('*' * 35)
         print()
