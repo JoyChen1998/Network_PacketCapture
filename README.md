@@ -5,8 +5,9 @@ My computer-network project about packet capture.
 + Python 3.5 (or latest)        [ need module basically => `socket` ,  `struct` ]
 + OS Platform   =>   Linux
 + Note:  
-    1. macOS 无法使用`socket`的关键字`socket.AF_PACKET` ，因此使用CentOS。Windows 我没有测试过，欢迎你的测试
-    2. 需要在root下运行
+    1. macOS 无法使用`socket`的关键字`socket.AF_PACKET` ，因此使用CentOS。
+    2. Windows 我没有测试过，欢迎你的测试
+    3. 需要在root下运行
 
 ## 功能配置说明
 + `INTERVAL`  [`int`]
@@ -26,6 +27,7 @@ My computer-network project about packet capture.
     该变量控制是否需要过滤`来源IP`和`目的IP`，默认为`False`(不过滤)，在`unpack_ip_packet`中使用。开启过滤时，需要输入指定的`来源IP`和`目的IP`。然后就只会解指定IP的数据包，不会尝试解含有别的IP的数据包。
     
 + `HAVE_SEARCH`  [`boolean`]
+
     该变量控制是否查找数据包中的某个关键词部分，默认为`False`(不查找) (个人认为其实在保存文件之后，完全可以手动搜索hhh，这个功能不是很想做)
     
 + 以上变量都在`CONFIG`中，要显示的字段，都在类的init方法中，以`字典`的形式形式存储，以`遍历`的方式输出(和保存)

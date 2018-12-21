@@ -2,6 +2,7 @@
 import socket
 import time
 from struct import *
+from multiprocessing import Pool
 
 __AUTHOR__ = 'JoyChan'
 __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
@@ -21,11 +22,15 @@ HAVE_SEARCH = False  # control search func
 protocol_filter_list = []
 source_ip_filter_list = []
 destination_ip_filter_list = []
-allows_protocol = ['TCP', 'ICMP', 'UDP']
+
+allows_protocol = ['TCP', 'ICMP', 'UDP']  # for transfer protocol number to protocol name
 
 
 class Sniffer:
     def __init__(self):
+        '''
+        do basically set
+        '''
         global protocol_filter_list
         global source_ip_filter_list
         global destination_ip_filter_list
@@ -92,6 +97,27 @@ class Sniffer:
         return protocols[str(protocol)]
 
     def soc_establish_conn(self):
+
+        '''
+        To create a socket
+        :return: nil
+        '''
+
+        '''
+        (You can skip it)
+        I just want to say something about the `socket.AF_INET` & `socket.AF_PACKET`.  
+        When I use this word first,I only can get one protocol just like `TCP`, `UDP`, or `ICMP`...
+        So, should I neet to use Multiprocessing Pool ??
+        I have been thinking for a long time about multi-process parallelism ...
+        But, When I say the anotation about `AF_PACKET` I get a clear idea. Why not unpack the MAC-Packet?
+        Ohhhh!
+
+        You can see the word about AF_PACKET =>  `When using socket.AF_PACKET to create a socket, 
+        it will be able to capture all Ethernet frames received or sent by the unit.`
+
+        So, the final version change to use AF_PACKET, I don't need to care about multi-process!
+
+        '''
         try:
             # self.s = socket.socket(socket.AF_INET, socket.SOCK_RAW, self.param)
             self.s = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(0x0003))  # set a packet socket conn
@@ -118,7 +144,7 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-    #         time.sleep(2)
+    #         time.sleep(TIMEOUT)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
@@ -307,9 +333,9 @@ if __name__ == '__main__':
                     protocol_filter_list = []
         # print(protocol_filter_list)
     if HAVE_FILTER_IP:
-        str_filter_in_ip = input('Please input in-ip filter\n')
+        str_filter_in_ip = input('Please input source-ip filter\n')
         source_ip_filter_list = str_filter_in_ip
-        str_filter_out_ip = input('Please input out-ip filter\n')
+        str_filter_out_ip = input('Please input destination-ip filter\n')
         destination_ip_filter_list = str_filter_out_ip
     snif = Sniffer()
     try:
