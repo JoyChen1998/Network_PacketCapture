@@ -23,6 +23,8 @@ protocol_filter_list = []
 source_ip_filter_list = []
 destination_ip_filter_list = []
 
+cnt = 0  # for packet merge
+
 allows_protocol = ['TCP', 'ICMP', 'UDP']  # for transfer protocol number to protocol name
 
 
