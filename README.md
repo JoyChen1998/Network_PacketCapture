@@ -5,9 +5,9 @@ My computer-network project about packet capture.
 + Python 3.5 (or latest)        [ need module basically => `socket` ,  `struct` ]
 + OS Platform   =>   Linux
 + Note:  
-    1. macOS 无法使用`socket`的关键字`socket.AF_PACKET` ，因此使用CentOS。
-    2. Windows 我没有测试过，欢迎你的测试
-    3. 需要在root下运行
+    1. macOS 无法使用`socket`的关键字`socket.AF_PACKET` ，因此使用CentOS.
+    2. Windows 我没有测试过，欢迎你的测试.
+    3. 需要在root下运行.
 
 ## 功能配置说明
 + `INTERVAL`  [ int ]
