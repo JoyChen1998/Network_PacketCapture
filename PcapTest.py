@@ -12,7 +12,7 @@ __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
 # ---* CONFIG *---
 
 TIMEOUT = 1  # for default speed to get a packet
-HAVE_SAVED = True  # control file save
+HAVE_SAVED = False  # control file save
 HAVE_FILTER_PROTOCOL = False  # control filter rules for protocol
 HAVE_FILTER_IP = False  # control filter rules for ip
 HAVE_SEARCH = False  # control search func
@@ -49,6 +49,12 @@ class Sniffer:
         self.Packet_IP = {
             'Version': None,
             'IP Header Length': None,
+            'Differ Service': None,
+            'All Length': None,
+            'Identification': None,
+            'DF': None,
+            'MF': None,
+            'Offset': None,
             'TTL': None,
             'Protocol': None,
             'Source Address': None,
@@ -95,6 +101,18 @@ class Sniffer:
         return tmp
 
 
+    @staticmethod
+    def get_flag(e):
+        f = bin(int(e[0], 16))[2:]
+        o = '0' * (4 - len(f)) + f
+        return o[1:3]
+
+
+    @staticmethod
+    def get_offset(e):
+        f = bin(int(e[0], 16))[2:]
+        o = '0' * (4 - len(f)) + f
+        return int(o[3] + e[1:], 16)
 
     @staticmethod
     def change_digit_to_word(protocol):
@@ -153,22 +171,36 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-    #         time.sleep(TIMEOUT)
+            time.sleep(TIMEOUT)
 
     def unpack_ip_packet(self, packet, eth_len):
         # Parse IP header
         # take first 20 characters for the ip header
         ip_header = packet[eth_len: eth_len + 20]
         # ip packet unpack
-        iph = unpack('!BBHHHBBH4s4s', ip_header)
+        iph = unpack('!BBHH2sBBH4s4s', ip_header)
         version_ihl = iph[0]
+        differ_service = iph[1]
         version = version_ihl >> 4
         ihl = version_ihl & 0xF
         iph_lenth = ihl * 4
+        all_lenth = iph[2]
+        id = iph[3]
+        flag_N_offset = iph[4].hex()
+        flags = self.get_flag(flag_N_offset)
+        MF = flags[1]
+        DF = flags[0]
+        offst = self.get_offset(flag_N_offset)
         ttl = iph[5]
         protocol = iph[6]
         self.Packet_IP['Version'] = version
+        self.Packet_IP['Differ Service'] = differ_service
         self.Packet_IP['IP Header Length'] = ihl
+        self.Packet_IP['All Length'] = all_lenth
+        self.Packet_IP['Identification'] = id
+        self.Packet_IP['MF'] = MF
+        self.Packet_IP['DF'] = DF
+        self.Packet_IP['Offset'] = offst
         self.Packet_IP['TTL'] = ttl
         self.Packet_IP['Protocol'] = self.change_digit_to_word(protocol)
         self.Packet_IP['Source Address'] = socket.inet_ntoa(iph[8])
