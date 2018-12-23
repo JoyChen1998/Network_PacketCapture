@@ -12,7 +12,7 @@ My computer-network project about packet capture.
 ## 功能配置说明
 + `INTERVAL`  [ int ]
 
-    该变量控制每次获取MAC帧的速度，默认被注释，在方法`unpack_eth_packet`中
+    在方法`unpack_eth_packet`中，该变量控制每次获取MAC帧的速度，默认被注释。
     
 + `HAVE_SAVED`  [ boolean ]
 
