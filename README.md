@@ -21,11 +21,11 @@ My computer-network project about packet capture.
 ## 配置说明
 + `INTERVAL`  [ int ]
 
-    在方法`unpack_eth_packet`中，该变量控制每次获取MAC帧的速度，默认被注释。
+    在方法`unpack_eth_packet`中，该变量控制每次获取MAC帧的速度，默认运行的时候取包间隔1s。
     
 + `HAVE_SAVED`  [ boolean ]
 
-    该变量控制是否写入文件保存解得的数据包部分，默认为`False`(不保存)，在每一个解包方法中都有控制
+    该变量控制是否写入文件保存解得的数据包部分，默认为`False`(不保存)，在每一个解包方法中都有控制是否写入文件。
     
 + `HAVE_FILTER_PROTOCOL`  [ boolean ]
 
@@ -34,10 +34,6 @@ My computer-network project about packet capture.
 + `HAVE_FILTER_IP`  [ boolean ]
 
     该变量控制是否需要过滤`来源IP`和`目的IP`，默认为`False`(不过滤)，在`unpack_ip_packet`中使用。开启过滤时，需要输入指定的`来源IP`和`目的IP`。然后就只会解指定IP的数据包，不会尝试解含有别的IP的数据包。
-    
-+ `HAVE_SEARCH`  [ boolean ]
-
-    该变量控制是否查找数据包中的某个关键词部分，默认为`False`(不查找) (个人认为其实在保存文件之后，完全可以手动搜索hhh，这个功能不是很想做)
     
 + 以上变量都在`CONFIG`中，要显示的字段，都在类的init方法中，以`字典`的形式形式存储，以`遍历`的方式输出(和保存)
 
