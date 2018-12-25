@@ -174,6 +174,12 @@ class Sniffer:
             time.sleep(TIMEOUT)
 
     def unpack_ip_packet(self, packet, eth_len):
+        '''
+        this function is to unpack the ip packet
+        :param eth_len: the header include ` MAC frame header`
+        :param packet: the packet that needed to packet
+        :return: nil & just return
+        '''
         # Parse IP header
         # take first 20 characters for the ip header
         ip_header = packet[eth_len: eth_len + 20]
@@ -205,22 +211,25 @@ class Sniffer:
         self.Packet_IP['Protocol'] = self.change_digit_to_word(protocol)
         self.Packet_IP['Source Address'] = socket.inet_ntoa(iph[8])
         self.Packet_IP['Destination Address'] = socket.inet_ntoa(iph[9])
-        if DF == '0':
-            if MF == '1':
-                with open('merge.'+str(self.cnt_merge)+'.txt', 'a') as f:
-                    f.write('packet_cnt=' + str(self.cnt) + 'offset=' + str(offst) + '\n')
-                f.close()
-            elif MF == '0':
-                with open('merge.'+str(self.cnt_merge)+'.txt', 'a') as f:
-                    f.write('packet_cnt=' + str(self.cnt) + 'offset=' + str(offst) + '\n')
-                f.close()
-                self.cnt_merge += 1
+
         # filter for ip in/out
         if len(self.filter_in_ip) > 0 and self.Packet_IP['Source Address'] not in self.filter_in_ip:
             return
         if len(self.filter_out_ip) > 0 and self.Packet_IP['Destination Address'] not in self.filter_out_ip:
             return
         new_length = iph_lenth + eth_len  # upgrade packet parser start length
+
+        if HAVE_SAVED and DF == '0':
+            if MF == '1':
+                with open('merge.'+str(self.cnt_merge)+'.txt', 'a') as f:
+                    f.write('packet_cnt=' + str(self.cnt) + '\noffset=' + str(offst) + '\ndata=' + str(packet[new_length + 20:]) + '\n')
+
+                f.close()
+            elif MF == '0':
+                with open('merge.'+str(self.cnt_merge)+'.txt', 'a') as f:
+                    f.write('packet_cnt=' + str(self.cnt) + '\noffset=' + str(offst) + '\ndata=' + str(packet[new_length + 20:]) + '\n')
+                f.close()
+                self.cnt_merge += 1
         # classify different kinds of packet
         if HAVE_FILTER_PROTOCOL:
             self.cnt += 1
@@ -245,7 +254,12 @@ class Sniffer:
                 print()
 
     def unpack_tcp_packet(self, iph_lenth, packet):
-
+        '''
+        this function is to unpack the tcp packet
+        :param iph_lenth: the header include ` MAC frame header & ip header`
+        :param packet: the packet that needed to packet
+        :return: nil
+        '''
         tcp_header = packet[iph_lenth:iph_lenth + 20]
         tcph = unpack('!HHLLBBHHH', tcp_header)
         source_port = tcph[0]
@@ -267,30 +281,36 @@ class Sniffer:
         self.Packet_TCP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('tcp_packet.txt', 'a') as f:
-                f.write('** packet - index: ' + str(self.cnt) + ' **\n')
+                f.write('----- packet - index: ' + str(self.cnt) + ' -----\n')
                 for key, value in self.Packet_MAC.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n')
                 for key, value in self.Packet_IP.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n')
                 for key, value in self.Packet_TCP.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n***************************\n\n')
-        print('** packet - index: ', str(self.cnt), ' **')
+        print('----- packet - index: ', str(self.cnt), ' -----')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         for key, value in self.Packet_TCP.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         print('*' * 35)
         print()
 
     def unpack_udp_packet(self, iph_lenth, packet):
+        '''
+        this function is to unpack the udp packet
+        :param iph_lenth: the header include ` MAC frame header & ip header`
+        :param packet: the packet that needed to packet
+        :return: nil
+        '''
         udph_length = 8
         udp_header = packet[iph_lenth:iph_lenth + 8]
         udph = unpack('!HHHH', udp_header)
@@ -309,30 +329,36 @@ class Sniffer:
         self.Packet_UDP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('udp_packet.txt', 'a') as f:
-                f.write('** packet - index: ' + str(self.cnt) + ' **\n')
+                f.write('----- packet - index: ' + str(self.cnt) + ' -----\n')
                 for key, value in self.Packet_MAC.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n')
                 for key, value in self.Packet_IP.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n')
                 for key, value in self.Packet_UDP.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n***************************\n\n')
-        print('** packet - index: ', str(self.cnt), ' **')
+        print('----- packet - index: ', str(self.cnt), ' -----')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         for key, value in self.Packet_UDP.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         print('*' * 35)
         print()
 
     def unpack_icmp_packet(self, iph_lenth, packet):
+        '''
+        this function is to unpack the icmp packet
+        :param iph_lenth: the header include ` MAC frame header & ip header`
+        :param packet: the packet that needed to packet
+        :return: nil
+        '''
         icmph_length = 4
         icmp_header = packet[iph_lenth:iph_lenth + 4]
         icmph = unpack('!BBH', icmp_header)
@@ -349,25 +375,25 @@ class Sniffer:
         self.Packet_ICMP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('icmp_packet.txt', 'a') as f:
-                f.write(' **packet - index: ' + str(self.cnt) + ' **\n')
+                f.write('----- packet - index: ' + str(self.cnt) + ' -----\n')
                 for key, value in self.Packet_MAC.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n')
                 for key, value in self.Packet_IP.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n')
                 for key, value in self.Packet_ICMP.items():
-                    f.write(key + ':' + str(value) + '\t')
+                    f.write(key + ':' + str(value) + '\n')
                 f.write('\n***************************\n\n')
-        print('** packet - index: ', str(self.cnt), ' **')
+        print('----- packet - index: ', str(self.cnt), ' -----')
         for key, value in self.Packet_MAC.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         for key, value in self.Packet_IP.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         for key, value in self.Packet_ICMP.items():
-            print(key, ':', value, end='\t')
+            print(key, ':', value)
         print()
         print('*' * 35)
         print()
@@ -402,5 +428,4 @@ if __name__ == '__main__':
         # pool.map(snif.soc_establish_conn, params)   # udp will cause suspended
         snif.soc_establish_conn()
     except:
-        print('*'*35)
         print('HALTED!')
