@@ -7,7 +7,7 @@ from multiprocessing import Pool
 
 __AUTHOR__ = 'JoyChan'
 __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
-
+__VERSION__ = '1.3.4'
 
 # ---* CONFIG *---
 
@@ -18,7 +18,7 @@ HAVE_FILTER_IP = False  # control filter rules for ip
 
 # ---* CONFIG *---
 
-
+ackn = []
 protocol_filter_list = []
 source_ip_filter_list = []
 destination_ip_filter_list = []
@@ -41,6 +41,7 @@ class Sniffer:
         self.filter_out_ip = destination_ip_filter_list
         self.cnt = 1  # for count packet
         self.cnt_merge = 1  # for merge count
+        self.ack = []
 
         self.Packet_MAC = {
             'Source MAC': None,
@@ -100,6 +101,19 @@ class Sniffer:
                 tmp += chr(int("%.2x" % data[j], 16))
         return tmp
 
+    def record_http_msg(self, data, acknowledge):
+        for index in range(0, len(self.ack)):
+            if str(acknowledge) == str(self.ack[index]):
+                ackn[index] += data
+        if len(self.ack) > 0:
+            with open('HTTP_record.txt', 'w') as f:
+                f.write('** http record started **\n')
+                for index_i in ackn:
+                    f.write('new http packet data\n')
+                    f.write(index_i + '\n')
+                    f.write('*'*40 + '\n')
+                f.write('\n** http record ended **\n')
+            f.close()
 
     @staticmethod
     def get_flag(e):
@@ -171,7 +185,7 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-            time.sleep(TIMEOUT)
+    #         time.sleep(TIMEOUT)
 
     def unpack_ip_packet(self, packet, eth_len):
         '''
@@ -182,6 +196,7 @@ class Sniffer:
         '''
         # Parse IP header
         # take first 20 characters for the ip header
+        self.cnt += 1
         ip_header = packet[eth_len: eth_len + 20]
         # ip packet unpack
         iph = unpack('!BBHH2sBBH4s4s', ip_header)
@@ -232,7 +247,6 @@ class Sniffer:
                 self.cnt_merge += 1
         # classify different kinds of packet
         if HAVE_FILTER_PROTOCOL:
-            self.cnt += 1
             if protocol == 6 and protocol in protocol_filter_list:
                 self.unpack_tcp_packet(new_length, packet)
             elif protocol == 17 and protocol in protocol_filter_list:
@@ -242,7 +256,6 @@ class Sniffer:
             else:
                 return
         else:
-            self.cnt += 1
             if protocol == 6:
                 self.unpack_tcp_packet(new_length, packet)
             elif protocol == 17:
@@ -271,13 +284,18 @@ class Sniffer:
         h_size = iph_lenth + tcph_length * 4
         data_size = len(packet) - h_size
         # TCP Packet's data segment
-        data = packet[h_size:]
+        data = self.convert_hex_to_ascii(packet[h_size:])
+        if "HTTP" in data:
+            self.ack.append(acknowledgement)
+            ackn.append('')
+        if acknowledgement in self.ack:
+            self.record_http_msg(data, acknowledgement)
         self.Packet_TCP['Source_port'] = source_port
         self.Packet_TCP['Dest_port'] = dest_port
         self.Packet_TCP['Sequence'] = sequence
         self.Packet_TCP['Acknowledgement'] = acknowledgement
         self.Packet_TCP['TCP Header Length'] = tcph_length
-        self.Packet_TCP['Data_seg'] = self.convert_hex_to_ascii(data)
+        self.Packet_TCP['Data_seg'] = data
         self.Packet_TCP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('tcp_packet.txt', 'a') as f:
@@ -320,12 +338,12 @@ class Sniffer:
         checksum = udph[3]
         h_size = iph_lenth + udph_length
         data_size = len(packet) - h_size
-        data = packet[h_size:]
+        data = self.convert_hex_to_ascii(packet[h_size:])
         self.Packet_UDP['Source_port'] = source_port
         self.Packet_UDP['Dest_port'] = dest_port
         self.Packet_UDP['Length'] = length
         self.Packet_UDP['Checksum'] = checksum
-        self.Packet_UDP['Data_seg'] = self.convert_hex_to_ascii(data)
+        self.Packet_UDP['Data_seg'] = data
         self.Packet_UDP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('udp_packet.txt', 'a') as f:
@@ -367,11 +385,11 @@ class Sniffer:
         checksum = icmph[2]
         h_size = iph_lenth + icmph_length
         data_size = len(packet) - h_size
-        data = packet[h_size:]
+        data = self.convert_hex_to_ascii(packet[h_size:])
         self.Packet_ICMP['Type'] = icmp_type
         self.Packet_ICMP['Code'] = code
         self.Packet_ICMP['Checksum'] = checksum
-        self.Packet_ICMP['Data_seg'] = self.convert_hex_to_ascii(data)
+        self.Packet_ICMP['Data_seg'] = data
         self.Packet_ICMP['Data_length'] = data_size
         if HAVE_SAVED:
             with open('icmp_packet.txt', 'a') as f:
@@ -427,5 +445,5 @@ if __name__ == '__main__':
     try:
         # pool.map(snif.soc_establish_conn, params)   # udp will cause suspended
         snif.soc_establish_conn()
-    except:
+    except KeyboardInterrupt:
         print('HALTED!')
