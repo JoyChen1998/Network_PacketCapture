@@ -1,7 +1,6 @@
 # encoding = utf-8
 import socket
 import time
-import collections
 from struct import *
 from multiprocessing import Pool
 
