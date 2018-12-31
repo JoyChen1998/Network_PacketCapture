@@ -7,7 +7,7 @@ from multiprocessing import Pool
 
 __AUTHOR__ = 'JoyChan'
 __REPO__ = "https://github.com/JoyChen1998/Network_PacketCapture"
-__VERSION__ = '1.3.4'
+__VERSION__ = '1.3.5'
 
 # ---* CONFIG *---
 
@@ -196,7 +196,7 @@ class Sniffer:
             if eth_protocol == 8:
                 self.unpack_ip_packet(packet, eth_length)
     #         add a interval
-    #         time.sleep(INTERVAL)
+             time.sleep(INTERVAL)
 
 def unpack_ip_packet(self, packet, eth_len):
     '''
