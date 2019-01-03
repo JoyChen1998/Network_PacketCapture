@@ -9,7 +9,7 @@ My computer-network project about packet capture.
     2. Windows 我没有测试过，欢迎你的测试.
     3. 需要在root下运行.
 
-## 功能点实现
+## 功能实现
 + 能够侦听到所有来自或从本机的MAC帧
 + 能够分析数据包和解包，基本按照协议头部来进行分析
 + 能够根据指定的来源和目的IP来过滤数据包。例子类似上一条
